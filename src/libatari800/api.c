@@ -50,6 +50,9 @@
 #include "libatari800/sound.h"
 #include "libatari800/statesav.h"
 
+/* Callback pointer for disk activity notifications */
+void (*disk_activity_callback)(int drive, int operation) = NULL;
+
 
 #ifdef HAVE_SETJMP
 jmp_buf libatari800_cpu_crash;
@@ -488,6 +491,45 @@ void libatari800_restore_state(emulator_state_t *state)
  */
 void libatari800_exit() {
 	Atari800_Exit(0);
+}
+
+/** Get current disk activity state (polling method)
+ * 
+ * Checks if there is currently disk I/O activity happening and returns
+ * information about the active drive and operation type.
+ * 
+ * @param drive pointer to receive drive number (1-8) if activity detected
+ * @param operation pointer to receive operation type (0=read, 1=write) if activity detected  
+ * @param time_remaining pointer to receive frames remaining for LED display if activity detected
+ * 
+ * @retval 1 if disk activity is currently happening
+ * @retval 0 if no disk activity
+ */
+int libatari800_get_disk_activity(int *drive, int *operation, int *time_remaining)
+{
+	if (SIO_last_op_time > 0) {
+		if (drive) *drive = SIO_last_drive;
+		if (operation) *operation = SIO_last_op;
+		if (time_remaining) *time_remaining = SIO_last_op_time;
+		return 1;
+	}
+	return 0;
+}
+
+/** Set callback for real-time disk activity events
+ * 
+ * Sets a callback function that will be called whenever disk I/O activity
+ * occurs. This provides real-time notification without polling.
+ * 
+ * Note: The callback is called from within the emulation loop, so it should
+ * be kept lightweight and avoid blocking operations.
+ * 
+ * @param callback function to call when disk activity occurs, or NULL to disable
+ *                 callback receives: drive (1-8), operation (0=read, 1=write)
+ */
+void libatari800_set_disk_activity_callback(void (*callback)(int drive, int operation))
+{
+	disk_activity_callback = callback;
 }
 
 /*
