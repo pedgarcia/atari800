@@ -278,6 +278,10 @@ int libatari800_next_frame(input_template_t *input);
 
 int libatari800_mount_disk_image(int diskno, const char *filename, int readonly);
 
+void libatari800_dismount_disk_image(int diskno);
+
+void libatari800_disable_drive(int diskno);
+
 int libatari800_reboot_with_file(const char *filename);
 
 UBYTE *libatari800_get_main_memory_ptr();
@@ -305,5 +309,36 @@ void libatari800_get_current_state(emulator_state_t *state);
 void libatari800_restore_state(emulator_state_t *state);
 
 void libatari800_exit();
+
+/* Disk activity monitoring API - added for Fujisan emulator */
+/* Get current disk activity state (polling method)
+ * Returns 1 if activity detected, 0 if no activity
+ * drive: receives drive number (1-8) if activity detected  
+ * operation: receives operation type (0=read, 1=write) if activity detected
+ * time_remaining: receives frames remaining for LED display if activity detected
+ */
+int libatari800_get_disk_activity(int *drive, int *operation, int *time_remaining);
+
+/* Set callback for real-time disk activity events
+ * callback: function to call when disk activity occurs, or NULL to disable
+ * Callback receives: drive (1-8), operation (0=read, 1=write)
+ */
+void libatari800_set_disk_activity_callback(void (*callback)(int drive, int operation));
+
+/* SIO patch control API - added for investigating disk speed changes
+ * The SIO patch provides fast disk access by bypassing realistic timing delays
+ * When disabled, emulator uses realistic hardware timing (slower but more authentic)
+ */
+
+/* Get current SIO patch status
+ * Returns 1 if SIO patch (fast disk access) is enabled, 0 if disabled
+ */
+int libatari800_get_sio_patch_enabled();
+
+/* Set SIO patch status
+ * enabled: 1 to enable fast disk access, 0 to use realistic timing
+ * Returns previous state (1 or 0)
+ */
+int libatari800_set_sio_patch_enabled(int enabled);
 
 #endif /* LIBATARI800_H_ */

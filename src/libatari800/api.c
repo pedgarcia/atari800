@@ -40,6 +40,7 @@
 #include "memory.h"
 #include "screen.h"
 #include "sio.h"
+#include "esc.h"
 #include "../sound.h"
 #include "util.h"
 #include "libatari800/main.h"
@@ -52,6 +53,7 @@
 
 /* Callback pointer for disk activity notifications */
 void (*disk_activity_callback)(int drive, int operation) = NULL;
+
 
 
 #ifdef HAVE_SETJMP
@@ -251,6 +253,30 @@ int libatari800_next_frame(input_template_t *input)
 int libatari800_mount_disk_image(int diskno, const char *filename, int readonly)
 {
 	return SIO_Mount(diskno, filename, readonly);
+}
+
+/** Dismount disk image from drive
+ * 
+ * Remove the disk image from the specified drive. The drive status will be set to
+ * SIO_NO_DISK and the filename will be cleared to "Empty".
+ * 
+ * @param diskno drive number (1-8 for D1: through D8:)
+ */
+void libatari800_dismount_disk_image(int diskno)
+{
+	SIO_Dismount(diskno);
+}
+
+/** Disable disk drive
+ * 
+ * Dismount any disk image and disable the drive completely. The drive status will be set to
+ * SIO_OFF and the filename will be set to "Off".
+ * 
+ * @param diskno drive number (1-8 for D1: through D8:)
+ */
+void libatari800_disable_drive(int diskno)
+{
+	SIO_DisableDrive(diskno);
 }
 
 
@@ -530,6 +556,37 @@ int libatari800_get_disk_activity(int *drive, int *operation, int *time_remainin
 void libatari800_set_disk_activity_callback(void (*callback)(int drive, int operation))
 {
 	disk_activity_callback = callback;
+}
+
+/** Get current SIO patch status
+ * 
+ * Returns the current state of the SIO patch which controls disk access speed.
+ * When enabled (1), disk access is fast and bypasses realistic timing delays.
+ * When disabled (0), disk access uses realistic hardware timing (slower).
+ * 
+ * @retval 1 if SIO patch (fast disk access) is enabled
+ * @retval 0 if SIO patch is disabled (realistic timing)
+ */
+int libatari800_get_sio_patch_enabled()
+{
+	return ESC_enable_sio_patch;
+}
+
+/** Set SIO patch status
+ * 
+ * Controls the SIO patch which affects disk access speed.
+ * - enabled=1: Fast disk access (bypasses realistic timing)
+ * - enabled=0: Realistic hardware timing (slower but authentic)
+ * 
+ * @param enabled 1 to enable fast disk access, 0 to use realistic timing
+ * 
+ * @retval previous SIO patch state (1 or 0)
+ */
+int libatari800_set_sio_patch_enabled(int enabled)
+{
+	int previous_state = ESC_enable_sio_patch;
+	ESC_enable_sio_patch = enabled ? TRUE : FALSE;
+	return previous_state;
 }
 
 /*
