@@ -122,25 +122,31 @@ static void set_CB2(int value)
 	PIA_CB2 = value;
 }
     
-/* Update PROCEED pin (CA1), for potential future use */
-/*static void set_CA1(int value)
+/* Set PROCEED pin (CA1) */
+void PIA_SetCA1(int value)
 {
-    if (PIA_CA1 != value) {
-        PIA_PACTL |= 0x01;
-        update_PIA_IRQ();
-    }
-    PIA_CA1 = value;
-}*/
+	if (PIA_CA1 != value) {
+		int active_transition = ((value == 1) == ((PIA_PACTL & 0x01) != 0));
+		if (active_transition) {
+			PIA_PACTL |= 0x80;
+			update_PIA_IRQ();
+		}
+		PIA_CA1 = value;
+	}
+}
 
-/* Update INTERRUPT pin (CB1), for potential future use */
-/*static void set_CB1(int value)
+/* Set INTERRUPT pin (CB1) */
+void PIA_SetCB1(int value)
 {
-    if (PIA_CB1 != value) {
-        PIA_PBCTL |= 0x01;
-        update_PIA_IRQ();
-    }
-    PIA_CB1 = value;
-}*/
+	if (PIA_CB1 != value) {
+		int active_transition = ((value == 1) == ((PIA_PBCTL & 0x01) != 0));
+		if (active_transition) {
+			PIA_PBCTL |= 0x80;
+			update_PIA_IRQ();
+		}
+		PIA_CB1 = value;
+	}
+}
 
 void update_PIA_IRQ(void)
 {

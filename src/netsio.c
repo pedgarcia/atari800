@@ -43,6 +43,10 @@ int netsio_cmd_state = 0;
 /* data frame size for SIO write commands */
 volatile int netsio_next_write_size = 0;
 
+/* PIA Pin buffered states for synchronous emulator polling */
+volatile int netsio_ca1_state = 1;
+volatile int netsio_cb1_state = 1;
+
 /* FIFO pipe: fds0: FujiNet->emulator */
 int fds0[2];
 
@@ -397,6 +401,15 @@ void netsio_toggle_cmd(int v)
         netsio_cmd_on();
 }
 
+/* Synchronous poll by emulator to apply pin states outside of network thread */
+void netsio_poll(void)
+{
+    if (netsio_enabled) {
+        PIA_SetCA1(netsio_ca1_state);
+        PIA_SetCB1(netsio_cb1_state);
+    }
+}
+
 /* MOTOR ON */
 int netsio_motor_on(void)
 {
@@ -698,20 +711,24 @@ static void *fujinet_rx_thread(void *arg) {
             /* set_CA1 */
             case NETSIO_PROCEED_ON:
             {
+                netsio_ca1_state = 0; /* Active low */
                 break;
             }
             case NETSIO_PROCEED_OFF:
             {
+                netsio_ca1_state = 1; /* Inactive high */
                 break;
             }
 
             /* set_CB1 */
             case NETSIO_INTERRUPT_ON:
             {
+                netsio_cb1_state = 0; /* Active low */
                 break;
             }
             case NETSIO_INTERRUPT_OFF:
             {
+                netsio_cb1_state = 1; /* Inactive high */
                 break;
             }
 

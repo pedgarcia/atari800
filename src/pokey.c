@@ -586,6 +586,9 @@ void POKEY_Scanline(void)
 			CPU_GenerateIRQ();
 		}
 	}
+#ifdef NETSIO
+	netsio_poll();
+#endif /* NETSIO */
 }
 
 /*****************************************************************************/
