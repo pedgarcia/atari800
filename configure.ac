@@ -388,7 +388,7 @@ AC_HEADER_TIOCGWINSZ
 SUPPORTS_SOUND_OSS=yes
 AC_CHECK_HEADERS([fcntl.h sys/ioctl.h sys/soundcard.h],,SUPPORTS_SOUND_OSS=no)
 if [[ "$a8_host" = "win" ]]; then
-    SUPPORTS_NETSIO=no
+    dnl NetSIO on Windows uses netsiowin.c (Winsock2); SUPPORTS_NETSIO remains yes
     AC_CHECK_HEADERS([windows.h winsock2.h],,SUPPORTS_RDEVICE=no)
 else
     AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h sys/socket.h termios.h],,SUPPORTS_RDEVICE=no; SUPPORTS_NETSIO=no)
@@ -987,7 +987,12 @@ fi
 AM_CONDITIONAL([WANT_NETSIO], test "$WANT_NETSIO" = "yes")
 
 if test "x$WANT_NETSIO" = "xyes"; then
-    AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([pthread library not found])])
+    if test "x$a8_host" != "xwin"; then
+        AC_CHECK_LIB([pthread], [pthread_create], [], [AC_MSG_ERROR([pthread library not found])])
+    else
+        dnl Windows NetSIO uses Winsock2 (netsiowin.c), not pthread
+        A8_NEED_LIB(ws2_32)
+    fi
     AC_DEFINE([NETSIO], [1], [Define to enable NetSIO (FujiNet) support])
     CFLAGS="$CFLAGS -DNETSIO"
     AC_SUBST([CFLAGS])
