@@ -978,9 +978,9 @@ A8_OPTION(pbi_bb,yes,
 AM_CONDITIONAL([WANT_PBI_BB], test "$WANT_PBI_BB" = "yes")
 
 if [[ "$SUPPORTS_NETSIO" = "yes" ]]; then
-dnl NetSIO / FujiNet support (only on Linux or MacOS)
-A8_OPTION(netsio,yes,
-       [Support NetSIO Protocol I/O interface (FujiNet) (default=ON)],
+dnl NetSIO / FujiNet support (POSIX: netsio.c; Windows: netsiowin.c). Default OFF so CI builds without it unless --enable-netsio.
+A8_OPTION(netsio,no,
+       [Support NetSIO Protocol I/O interface (FujiNet) (default=OFF)],
        NETSIO,[Define to enable NetSIO Protocol/FujiNet support.]
        )
 fi
